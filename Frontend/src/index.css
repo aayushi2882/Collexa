@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #0D1117;
+  --color-brand-surface: #171B22;
+  --color-brand-primary: #FFB26B;
+  --color-brand-text: #F6F3EF;
+  --color-brand-secondary: #A0A5AD;
+  
+  --font-editorial: "Playfair Display", serif;
+  --font-sans: "Outfit", sans-serif;
+  
+  --radius-brand: 24px;
+
+  --animate-float-1: float-1 6s ease-in-out infinite;
+  --animate-float-2: float-2 7s ease-in-out infinite;
+  --animate-float-3: float-3 8s ease-in-out infinite;
+  --animate-float-4: float-4 9s ease-in-out infinite;
+  --animate-fade-in-up: fade-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes float-1 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-8px) translateX(3px); }
+  }
+  @keyframes float-2 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-10px) translateX(-4px); }
+  }
+  @keyframes float-3 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-6px) translateX(5px); }
+  }
+  @keyframes float-4 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-12px) translateX(-3px); }
+  }
+  @keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0px); }
+  }
+}
+
+/* Base custom font styling and smooth scroll */
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-brand-bg);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-brand-text);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  
+  /* Subtle dotted grid texture covering the entire page */
+  background-image: radial-gradient(rgba(246, 243, 239, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-attachment: fixed;
+}
+
+/* Subtle dotted grid texture utility for custom elements */
+.bg-grid-dots {
+  background-image: radial-gradient(rgba(246, 243, 239, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
