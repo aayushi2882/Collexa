@@ -8,9 +8,7 @@ export async function signInWithGoogle() {
     },
   });
 
-  if (error) {
-    console.error(error);
-  }
+  return { error };
 }
 
 export async function signUpWithEmail(email: string, password: string) {

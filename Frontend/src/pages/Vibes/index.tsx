@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { signInWithGoogle } from "../../services/auth";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "../../services/auth";
 import VibeCard from "./VibeCard";
 import type { VibeCardData } from "./VibeCard";
 import { useAuth } from "../../context/AuthContext";
@@ -81,9 +81,17 @@ const VIBE_CARDS: VibeCardData[] = [
 
 export default function CollexaChooseVibe() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
   const [isExiting, setIsExiting] = useState(false);
-  const [selectedVibes, setSelectedVibes] = useState<Set<string>>(new Set());
+  const [selectedVibes, setSelectedVibes] = useState<Set<string>>(() => {
+    try {
+      const savedVibes = JSON.parse(localStorage.getItem("selected_vibes") ?? "[]");
+      return new Set(Array.isArray(savedVibes) ? savedVibes : []);
+    } catch {
+      return new Set();
+    }
+  });
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Transition Phase Management
@@ -246,7 +254,17 @@ export default function CollexaChooseVibe() {
     }, 100); // 100ms press animation duration
   };
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleGoogleSignIn = async () => {
+    localStorage.setItem("onboarding_auth_pending", "true");
+    const { error } = await signInWithGoogle();
+
+    if (error) {
+      localStorage.removeItem("onboarding_auth_pending");
+      setError(error.message);
+    }
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       setError("Please enter your email address.");
@@ -263,11 +281,26 @@ export default function CollexaChooseVibe() {
     setError(null);
     setLoading(true);
 
-    // Simulate Supabase authentication transition loading
-    setTimeout(() => {
+    try {
+      const { data, error: authError } = authFormState === "login"
+        ? await signInWithEmail(email, password)
+        : await signUpWithEmail(email, password);
+
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
+      if (data.session) {
+        setPhase("logging-in");
+        return;
+      }
+
+      setAuthFormState("login");
+      setError("Check your email to confirm your account, then sign in.");
+    } finally {
       setLoading(false);
-      setPhase("logging-in");
-    }, 1200);
+    }
   };
 
   const toggleFormState = () => {
@@ -278,6 +311,12 @@ export default function CollexaChooseVibe() {
   useEffect(() => {
     localStorage.setItem("selected_vibes", JSON.stringify(Array.from(selectedVibes)));
   }, [selectedVibes]);
+
+  useEffect(() => {
+    if (searchParams.get("onboarding") === "complete" && !authLoading && user) {
+      setPhase("logging-in");
+    }
+  }, [authLoading, searchParams, user]);
 
   const saveVibes = async (userId: string) => {
     try {
@@ -327,11 +366,7 @@ export default function CollexaChooseVibe() {
         } else {
           clearInterval(interval);
           setTimeout(() => {
-            if (user) {
-              setPhase("logging-in");
-            } else {
-              animateToAuthBadges();
-            }
+            animateToAuthBadges();
           }, 1200);
         }
       }, 650);
@@ -340,7 +375,7 @@ export default function CollexaChooseVibe() {
   }, [phase, user]);
 
   useEffect(() => {
-    if (phase === "logging-in") {
+    if (phase === "logging-in" && user) {
       let currentStep = 0;
       setLoginStep(0);
       const interval = setInterval(() => {
@@ -356,9 +391,6 @@ export default function CollexaChooseVibe() {
                   navigate("/explore");
                 }
               });
-            } else {
-              setError("User is not authenticated. Cannot proceed.");
-              setLoading(false);
             }
           }, 1000);
         }
@@ -410,7 +442,7 @@ export default function CollexaChooseVibe() {
         }}
       />
 
-      <nav className={`flex justify-between items-center w-full px-16 py-4 h-20 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      <nav className={`${phase === "logging-in" ? "hidden" : "flex"} justify-between items-center w-full px-16 py-4 h-20 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <div
           className="text-[#ede0d8] uppercase tracking-widest"
           style={{
@@ -429,7 +461,7 @@ export default function CollexaChooseVibe() {
         </span>
       </nav>
 
-      <main className="flex-grow flex px-16 gap-12 relative overflow-hidden">
+      <main className={`${phase === "logging-in" ? "hidden" : "flex"} flex-grow px-16 gap-12 relative overflow-hidden`}>
         <section className={`w-[45%] flex flex-col justify-center py-20 relative z-10 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
           <div className="mb-12">
             <button
@@ -593,7 +625,7 @@ export default function CollexaChooseVibe() {
       </main>
 
       {/* Restructured Cinematic Transition Overlay Layout */}
-      {phase !== "selection" && (
+      {phase !== "selection" && phase !== "logging-in" && (
         <div className="absolute inset-0 z-[110] flex flex-col items-center justify-center pointer-events-none">
           {/* 1. Floating merged cards placeholder */}
           <div ref={placeholderRef} className="w-[310px] h-[360px] pointer-events-none opacity-0" />
@@ -694,7 +726,7 @@ export default function CollexaChooseVibe() {
                 <div className="flex flex-col gap-4">
                   {/* Google Login Button */}
                   <button
-                    onClick={signInWithGoogle}
+                    onClick={handleGoogleSignIn}
                     className={`w-full h-12 rounded-full bg-[#ede0d8] hover:bg-white text-black font-bold text-xs uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-md ${
                       authSubPhase === "expanding" ? "opacity-0 -translate-y-6 pointer-events-none" : "opacity-100 translate-y-0"
                     }`}
@@ -859,7 +891,7 @@ export default function CollexaChooseVibe() {
       )}
 
       {/* Cinematic Fixed Overlay Cards */}
-      {phase !== "selection" && (
+      {phase !== "selection" && phase !== "logging-in" && (
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-visible">
           {transitionCards.map((tCard, i) => {
             let transformStr = "";
@@ -905,7 +937,7 @@ export default function CollexaChooseVibe() {
                   transformOrigin: "top left",
                   transition: `transform ${transitionDuration} cubic-bezier(0.25, 1, 0.5, 1), opacity 1.8s`,
                   zIndex: 200 + i,
-                  boxShadow: phase === "auth" || phase === "logging-in" 
+                  boxShadow: phase === "auth"
                     ? "0 0 25px rgba(255, 178, 107, 0.2)" 
                     : "0 20px 50px rgba(0,0,0,0.6)",
                   opacity: 1,
@@ -952,7 +984,7 @@ export default function CollexaChooseVibe() {
       )}
 
       <footer
-        className={`flex flex-col md:flex-row justify-between items-center w-full px-16 py-8 gap-4 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`${phase === "logging-in" ? "hidden" : "flex"} flex-col md:flex-row justify-between items-center w-full px-16 py-8 gap-4 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         style={{ borderTop: "1px solid rgba(237,224,216,0.05)" }}
       >
         <div
