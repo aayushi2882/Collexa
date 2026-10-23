@@ -55,10 +55,107 @@ export default function CollexaHero() {
         .animate-bounce-custom {
           animation: bounce 1.8s ease-in-out infinite;
         }
+
+        .landing-hero {
+          min-height: 100vh;
+          min-height: 100svh;
+        }
+
+        .landing-nav {
+          padding: 0 20px;
+        }
+
+        .landing-nav-inner {
+          padding: 1.25rem 2.5rem;
+        }
+
+        .landing-nav-links {
+          gap: 3rem;
+        }
+
+        .landing-content {
+          padding: 6rem 64px 0;
+          max-width: 1200px;
+        }
+
+        .landing-eyebrow {
+          margin-bottom: 2rem;
+        }
+
+        .landing-title {
+          margin-bottom: 2.5rem;
+        }
+
+        .landing-description {
+          margin-bottom: 3.5rem;
+        }
+
+        .landing-actions {
+          gap: 2rem;
+        }
+
+        @media (max-width: 1100px) {
+          .landing-nav-inner { padding: 1rem 1.75rem; }
+          .landing-nav-links { gap: 1.75rem; }
+          .landing-content { padding-inline: 48px; }
+        }
+
+        @media (max-width: 767px) {
+          .landing-hero {
+            height: auto;
+            align-items: flex-start;
+          }
+
+          .landing-nav {
+            top: 1rem !important;
+            padding-inline: 16px !important;
+          }
+
+          .landing-nav-inner { padding: 0.8rem 1rem; }
+          .landing-nav-links { display: none !important; }
+
+          .landing-content {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8.5rem 24px 3rem;
+          }
+
+          .landing-eyebrow { margin-bottom: 1.25rem !important; }
+          .landing-title {
+            font-size: clamp(40px, 11vw, 58px) !important;
+            margin-bottom: 1.5rem !important;
+          }
+          .landing-description {
+            font-size: 16px !important;
+            line-height: 1.55 !important;
+            margin-bottom: 2rem !important;
+          }
+          .landing-actions { gap: 0.875rem !important; }
+          .landing-action {
+            min-height: 48px;
+            padding: 1rem 1.75rem !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .landing-content { padding-inline: 20px; }
+          .landing-logo { font-size: 20px !important; }
+          .landing-nav-cta {
+            padding: 0.65rem 1rem !important;
+            font-size: 11px !important;
+          }
+          .landing-eyebrow span { letter-spacing: 0.3em !important; }
+          .landing-actions { width: 100%; }
+          .landing-action { width: 100%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .fade-in-up, .animate-bounce-custom { animation: none; opacity: 1; }
+        }
       `}</style>
 
       <section
-        className="relative h-screen w-full overflow-hidden flex items-center"
+        className="landing-hero relative w-full overflow-hidden flex items-center"
         style={{ backgroundColor: "#131313", color: "#e5e2e1" }}
       >
         {/* ── Background ── */}
@@ -81,6 +178,7 @@ export default function CollexaHero() {
         {/* ── Navbar ── */}
         <header
           ref={navRef}
+          className="landing-nav"
           style={{
             position: "fixed",
             top: "2rem",
@@ -89,10 +187,10 @@ export default function CollexaHero() {
             zIndex: 50,
             display: "flex",
             justifyContent: "center",
-            padding: "0 20px",
           }}
         >
           <div
+            className="landing-nav-inner"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -103,13 +201,13 @@ export default function CollexaHero() {
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
               borderRadius: "9999px",
-              padding: "1.25rem 2.5rem",
               border: "1px solid rgba(255,255,255,0.1)",
               transition: "border-color 0.5s",
             }}
           >
             {/* Logo */}
             <div
+              className="landing-logo"
               style={{
                 fontFamily: "'Playfair Display', serif",
                 fontSize: "22px",
@@ -123,7 +221,7 @@ export default function CollexaHero() {
             </div>
 
             {/* Nav links */}
-            <nav style={{ display: "flex", alignItems: "center", gap: "3rem" }}>
+            <nav className="landing-nav-links" style={{ display: "flex", alignItems: "center" }}>
               {[
                 { label: "Explore", active: true },
                 { label: "Events",  active: false },
@@ -152,6 +250,7 @@ export default function CollexaHero() {
 
             {/* CTA */}
             <button
+              className="landing-nav-cta"
               style={{
                 fontFamily: "'Hanken Grotesk', sans-serif",
                 fontSize: "12px",
@@ -184,11 +283,11 @@ export default function CollexaHero() {
         </header>
 
         {/* ── Hero Content ── */}
-        <div style={{ position: "relative", zIndex: 30, padding: "6rem 64px 0", maxWidth: "1200px" }}>
+        <div className="landing-content" style={{ position: "relative", zIndex: 30 }}>
           <div style={{ maxWidth: "56rem" }}>
 
             {/* Eyebrow */}
-            <div className="fade-in-up" style={{ marginBottom: "2rem" }}>
+            <div className="landing-eyebrow fade-in-up">
               <span
                 style={{
                   fontFamily: "'Hanken Grotesk', sans-serif",
@@ -205,7 +304,7 @@ export default function CollexaHero() {
 
             {/* Headline */}
             <h1
-              className="fade-in-up delay-1"
+              className="landing-title fade-in-up delay-1"
               style={{
                 fontFamily: "'Playfair Display', serif",
                 fontSize: "clamp(40px, 7vw, 88px)",
@@ -213,7 +312,6 @@ export default function CollexaHero() {
                 letterSpacing: "-0.02em",
                 fontWeight: 700,
                 color: "#F5F5F3",
-                marginBottom: "2.5rem",
                 maxWidth: "48rem",
               }}
             >
@@ -225,7 +323,7 @@ export default function CollexaHero() {
 
             {/* Subtext */}
             <p
-              className="fade-in-up delay-2"
+              className="landing-description fade-in-up delay-2"
               style={{
                 fontFamily: "'Hanken Grotesk', sans-serif",
                 fontSize: "18px",
@@ -234,7 +332,6 @@ export default function CollexaHero() {
                 fontWeight: 300,
                 color: "#ddc1b1",
                 maxWidth: "36rem",
-                marginBottom: "3.5rem",
                 opacity: 0.9,
               }}
             >
@@ -244,10 +341,11 @@ export default function CollexaHero() {
 
             {/* CTA Buttons */}
             <div
-              className="fade-in-up delay-3"
-              style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2rem" }}
+              className="landing-actions fade-in-up delay-3"
+              style={{ display: "flex", flexWrap: "wrap", alignItems: "center" }}
             >
               <button
+                className="landing-action"
                 style={{
                   background: "#FF8A34",
                   color: "#fff",
@@ -273,6 +371,7 @@ export default function CollexaHero() {
 
               <button
                 onClick={() => navigate("/vibes")}
+                className="landing-action"
                 style={{
                   background: "transparent",
                   color: "#e5e2e1",

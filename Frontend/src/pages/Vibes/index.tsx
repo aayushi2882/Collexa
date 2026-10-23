@@ -94,6 +94,17 @@ export default function CollexaChooseVibe() {
   });
   const gridRef = useRef<HTMLDivElement>(null);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Transition Phase Management
   type Phase = "selection" | "centering" | "tasks" | "auth" | "logging-in";
   const [phase, setPhase] = useState<Phase>("selection");
@@ -159,6 +170,7 @@ export default function CollexaChooseVibe() {
   }, [phase]);
 
   const handleScroll = useCallback(() => {
+    if (isMobile) return;
     if (!gridRef.current || phase !== "selection") return;
     const scroll = gridRef.current.scrollTop;
     const cards = gridRef.current.querySelectorAll<HTMLElement>(".vibe-card");
@@ -166,7 +178,42 @@ export default function CollexaChooseVibe() {
       const speed = ((index % 3) + 1) * 0.05;
       card.style.transform = `translateY(${scroll * speed}px)`;
     });
-  }, [phase]);
+  }, [phase, isMobile]);
+
+  useEffect(() => {
+    if (!isMobile || phase !== "selection") return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let animationFrame: number | null = null;
+
+    const updateCardDepth = () => {
+      animationFrame = null;
+      const grid = gridRef.current;
+      if (!grid) return;
+
+      const cards = grid.querySelectorAll<HTMLElement>(".vibe-card");
+      const scrollDistance = Math.min(window.scrollY, 1200);
+      cards.forEach((card, index) => {
+        const depth = index % 3 === 0 ? -0.018 : index % 3 === 1 ? 0.01 : 0.024;
+        const offset = reducedMotion.matches ? 0 : scrollDistance * depth;
+        card.style.transform = `translate3d(0, ${offset}px, 0)`;
+      });
+    };
+
+    const handleWindowScroll = () => {
+      if (animationFrame === null) animationFrame = window.requestAnimationFrame(updateCardDepth);
+    };
+
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    reducedMotion.addEventListener("change", handleWindowScroll);
+    updateCardDepth();
+
+    return () => {
+      window.removeEventListener("scroll", handleWindowScroll);
+      reducedMotion.removeEventListener("change", handleWindowScroll);
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+    };
+  }, [isMobile, phase]);
 
   const startTransition = () => {
     const selected = Array.from(selectedVibes);
@@ -409,10 +456,11 @@ export default function CollexaChooseVibe() {
   const ctaLabel = canContinue
     ? `Continue with ${selectedVibes.size} Vibes`
     : `Choose ${remaining} more to continue`;
+  const compactTransition = window.innerWidth < 960;
 
   return (
     <div
-      className={`relative min-h-screen w-full flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+      className={`vibes-page relative min-h-screen w-full max-w-[100vw] flex flex-col overflow-x-hidden transition-all duration-300 ease-in-out ${
         isExiting ? "opacity-0 scale-[0.98]" : "opacity-100 scale-100"
       }`}
       style={{
@@ -442,7 +490,7 @@ export default function CollexaChooseVibe() {
         }}
       />
 
-      <nav className={`${phase === "logging-in" ? "hidden" : "flex"} justify-between items-center w-full px-16 py-4 h-20 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      <nav className={`${phase === "logging-in" ? "hidden" : "flex"} justify-between items-center w-full px-5 sm:px-8 lg:px-16 py-4 h-20 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <div
           className="text-[#ede0d8] uppercase tracking-widest"
           style={{
@@ -461,9 +509,9 @@ export default function CollexaChooseVibe() {
         </span>
       </nav>
 
-      <main className={`${phase === "logging-in" ? "hidden" : "flex"} flex-grow px-16 gap-12 relative overflow-hidden`}>
-        <section className={`w-[45%] flex flex-col justify-center py-20 relative z-10 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-          <div className="mb-12">
+      <main className={`${phase === "logging-in" ? "hidden" : "flex"} vibes-layout flex-grow flex-row px-5 sm:px-8 lg:px-16 gap-8 xl:gap-12 relative overflow-visible xl:overflow-hidden`}>
+        <section className={`vibes-copy w-[45%] flex flex-col justify-center py-8 sm:py-12 xl:py-20 relative z-10 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+          <div className="vibes-back mb-8 xl:mb-12">
             <button
               onClick={handleBackClick}
               className="inline-flex items-center gap-2 group transition-opacity hover:opacity-70 focus:outline-none bg-transparent border-none p-0 text-inherit cursor-pointer"
@@ -483,6 +531,7 @@ export default function CollexaChooseVibe() {
 
           <div className="space-y-6">
             <h1
+              className="vibes-heading"
               style={{
                 fontFamily: "'Playfair Display', serif",
                 fontSize: "64px",
@@ -509,7 +558,7 @@ export default function CollexaChooseVibe() {
             </p>
           </div>
 
-          <div className="mt-auto space-y-12 pt-16">
+          <div className="mt-10 xl:mt-auto space-y-6 xl:space-y-12 pt-0 xl:pt-16">
             <div className="space-y-3">
               <p
                 className="uppercase tracking-widest"
@@ -523,6 +572,7 @@ export default function CollexaChooseVibe() {
                 Selected
               </p>
               <div
+                className="vibes-selected-value"
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontSize: "32px",
@@ -534,14 +584,45 @@ export default function CollexaChooseVibe() {
                 {counterText}
               </div>
             </div>
+
+            {isMobile && phase === "selection" && (
+              <div className="vibes-continue mt-6 w-full">
+                <button
+                  disabled={!canContinue}
+                  onClick={startTransition}
+                  className="group flex items-center gap-4 pl-6 pr-3 py-3 rounded-full shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 cursor-pointer w-full justify-between"
+                  style={{ backgroundColor: "#ffb26b", color: "#4b2700" }}
+                >
+                  <span
+                    className="vibes-continue-label uppercase font-bold text-left"
+                    style={{
+                      fontFamily: "'Manrope', sans-serif",
+                      fontSize: "13px",
+                      letterSpacing: "0.15em",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {ctaLabel}
+                  </span>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center group-hover:rotate-45 transition-transform duration-500 shrink-0"
+                    style={{ backgroundColor: "#4b2700", color: "#ffb26b" }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
-        <section className="w-[55%] relative flex items-center h-full">
+        <section className="vibes-card-section w-[55%] relative flex items-center h-full">
           <div
             ref={gridRef}
             onScroll={handleScroll}
-            className={`grid grid-cols-3 gap-6 w-full pr-8 pt-20 pb-20 ${
+            className={`vibes-grid grid grid-cols-3 gap-3 sm:gap-5 lg:gap-6 w-full pr-0 xl:pr-8 pt-4 xl:pt-20 pb-24 xl:pb-20 ${
               phase !== "selection" ? "overflow-visible" : "overflow-y-auto"
             }`}
             style={{
@@ -575,9 +656,8 @@ export default function CollexaChooseVibe() {
                 }
               }
 
-              return (
+              const cardElement = (
                 <VibeCard
-                  key={card.vibe}
                   ref={(el) => {
                     cardRefs.current[card.vibe] = el;
                   }}
@@ -588,19 +668,21 @@ export default function CollexaChooseVibe() {
                   style={customStyle}
                 />
               );
+
+              return <div key={card.vibe}>{cardElement}</div>;
             })}
           </div>
 
-          {phase === "selection" && (
-            <div className="absolute bottom-10 right-0 z-50">
+          {!isMobile && phase === "selection" && (
+            <div className="vibes-continue absolute xl:bottom-10 right-0 z-50">
               <button
                 disabled={!canContinue}
                 onClick={startTransition}
-                className="group flex items-center gap-6 pl-8 pr-4 py-4 rounded-full shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 cursor-pointer"
+                className="group flex items-center gap-3 sm:gap-6 pl-5 sm:pl-8 pr-3 sm:pr-4 py-3 sm:py-4 rounded-full shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 cursor-pointer"
                 style={{ backgroundColor: "#ffb26b", color: "#4b2700" }}
               >
                 <span
-                  className="uppercase font-bold"
+                  className="vibes-continue-label uppercase font-bold text-left"
                   style={{
                     fontFamily: "'Manrope', sans-serif",
                     fontSize: "14px",
@@ -674,7 +756,7 @@ export default function CollexaChooseVibe() {
       {(phase === "auth" || phase === "logging-in") && (
         <div className="absolute inset-0 z-[120] flex items-center justify-center pointer-events-none">
           <div 
-            className="rounded-[28px] border border-white/5 shadow-2xl backdrop-blur-[24px] pointer-events-auto flex flex-col justify-between transition-all duration-500 ease-in-out"
+            className="vibes-auth-panel rounded-[28px] border border-white/5 shadow-2xl backdrop-blur-[24px] pointer-events-auto flex flex-col justify-between transition-all duration-500 ease-in-out"
             style={{
               width: authSubPhase === "form" ? "580px" : "450px",
               height: authSubPhase === "buttons" || authSubPhase === "press" ? "325px" : (authSubPhase === "expanding" ? "450px" : "620px"),
@@ -892,7 +974,7 @@ export default function CollexaChooseVibe() {
 
       {/* Cinematic Fixed Overlay Cards */}
       {phase !== "selection" && phase !== "logging-in" && (
-        <div className="fixed inset-0 z-[200] pointer-events-none overflow-visible">
+        <div className="vibes-transition-cards fixed inset-0 z-[200] pointer-events-none overflow-visible">
           {transitionCards.map((tCard, i) => {
             let transformStr = "";
             let transitionDuration = "1.8s";
@@ -917,10 +999,15 @@ export default function CollexaChooseVibe() {
               transitionDuration = "1.8s";
             } else if (animationStep === 3) {
               // Step 3: Auth Badges stack vertically along the left edge of the Auth Card aligned to the top
-              const badgeX = viewportCenterX - 400 - 120 + (i - 1) * 15;
-              const badgeY = viewportCenterY - 310 + i * 130;
+              const badgeX = compactTransition
+                ? viewportCenterX - 120 + (i - 1) * 18
+                : viewportCenterX - 400 - 120 + (i - 1) * 15;
+              const badgeY = compactTransition
+                ? viewportCenterY - 160 + (i - 1) * 15
+                : viewportCenterY - 310 + i * 130;
               const rot = i === 0 ? -2 : (i === 1 ? 1 : -1);
-              transformStr = `translate(${badgeX}px, ${badgeY}px) scale(0.58) rotate(${rot}deg)`;
+              const badgeScale = compactTransition ? 0.5 : 0.58;
+              transformStr = `translate(${badgeX}px, ${badgeY}px) scale(${badgeScale}) rotate(${rot}deg)`;
               transitionDuration = "1.8s";
             }
 
@@ -984,7 +1071,7 @@ export default function CollexaChooseVibe() {
       )}
 
       <footer
-        className={`${phase === "logging-in" ? "hidden" : "flex"} flex-col md:flex-row justify-between items-center w-full px-16 py-8 gap-4 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`${phase === "logging-in" ? "hidden" : "flex"} flex-col md:flex-row justify-between items-center w-full px-5 sm:px-8 lg:px-16 py-8 gap-4 relative z-50 transition-opacity duration-1000 ${phase !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         style={{ borderTop: "1px solid rgba(237,224,216,0.05)" }}
       >
         <div
@@ -998,7 +1085,7 @@ export default function CollexaChooseVibe() {
         >
           © 2024 COLLEXA EDITORIAL. ALL RIGHTS RESERVED.
         </div>
-        <div className="flex gap-8">
+        <div className="vibes-footer-links flex flex-wrap justify-center gap-8">
           {["Privacy Policy", "Terms of Service", "Journal Ethics"].map((label) => (
             <a
               key={label}
@@ -1020,6 +1107,152 @@ export default function CollexaChooseVibe() {
       {/* Hide scrollbar globally for the grid */}
       <style>{`
         div::-webkit-scrollbar { display: none; }
+
+        .vibes-page {
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden !important;
+        }
+
+        .vibes-page main,
+        .vibes-page section { min-width: 0; }
+
+        .vibes-heading { font-size: 64px; }
+
+        /* The page remains a two-column editorial composition at every size.
+           The values below scale the existing canvas rather than reflowing it. */
+        @media (max-width: 1279px) {
+          .vibes-layout { gap: clamp(1rem, 3vw, 2rem) !important; }
+          .vibes-grid {
+            max-height: min(68vh, 870px) !important;
+          }
+          .vibes-continue {
+            bottom: clamp(1rem, 3vw, 2.5rem) !important;
+          }
+          .vibes-grid .vibe-card { height: clamp(150px, 23vw, 300px) !important; }
+        }
+
+        /* Responsive Mobile Layout (Under 1024px Viewport Width) */
+        @media (max-width: 1023px) {
+          .vibes-page {
+            overflow-y: auto !important;
+            background-size: calc((100vw - 40px) / 6) 100%, cover !important;
+            background-position: 20px 0, center !important;
+          }
+          .vibes-page nav { height: 4rem; padding: 0.5rem 1rem; }
+          .vibes-page nav > div { font-size: 24px !important; }
+          .vibes-page nav > span { font-size: 10px !important; }
+          .vibes-layout {
+            flex-direction: row !important;
+            gap: clamp(12px, 3vw, 20px) !important;
+            padding-left: clamp(12px, 3vw, 20px) !important;
+            padding-right: clamp(12px, 3vw, 20px) !important;
+            overflow-y: visible !important;
+          }
+          .vibes-copy {
+            width: 45% !important;
+            position: sticky !important;
+            top: 40px !important;
+            align-self: flex-start !important;
+            height: auto !important;
+            z-index: 20 !important;
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
+          }
+          .vibes-heading {
+            font-size: clamp(28px, 6vw, 42px) !important;
+            max-width: 100% !important;
+          }
+          .vibes-copy p {
+            font-size: clamp(12px, 2.5vw, 15px) !important;
+            line-height: 1.5 !important;
+          }
+          .vibes-selected-value {
+            font-size: clamp(18px, 4vw, 24px) !important;
+          }
+          .vibes-card-section {
+            width: 53% !important;
+            height: 440px !important;
+            display: block !important;
+            overflow: visible !important;
+            align-items: flex-start !important;
+          }
+          .vibes-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 20px !important;
+            position: absolute !important;
+            top: 1rem;
+            left: 0;
+            max-height: none !important;
+            overflow: visible !important;
+            width: 720px !important;
+            padding: 0 !important;
+            transform-origin: top left;
+            transform: scale(0.32);
+          }
+          .vibe-card {
+            border-radius: 12px !important;
+            will-change: transform;
+            transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.3s ease !important;
+          }
+          .vibes-grid .vibe-card {
+            height: 280px !important;
+          }
+          .vibes-grid > div:nth-child(2) .vibe-card,
+          .vibes-grid > div:nth-child(10) .vibe-card {
+            height: 240px !important;
+          }
+          .vibes-grid > div:nth-child(3) .vibe-card {
+            height: 320px !important;
+          }
+          .vibes-grid > div:nth-child(4) .vibe-card {
+            height: 360px !important;
+          }
+          .vibes-grid > div:nth-child(6) .vibe-card {
+            height: 300px !important;
+          }
+          .vibes-grid > div:nth-child(7) .vibe-card {
+            height: 260px !important;
+          }
+          .vibes-grid > div:nth-child(8) .vibe-card {
+            height: 340px !important;
+          }
+          .vibe-card p {
+            font-size: 10px !important;
+          }
+          .vibe-card h3 {
+            font-size: 22px !important;
+          }
+          .vibe-card span {
+            font-size: 10px !important;
+          }
+          .vibes-auth-panel {
+            width: calc(100vw - 32px) !important;
+            max-width: 450px;
+            max-height: calc(100svh - 32px);
+            box-sizing: border-box;
+            padding: 28px 24px !important;
+            overflow-y: auto;
+          }
+        }
+
+        @media (max-width: 959px) {
+          .vibes-transition-cards { z-index: 100 !important; }
+        }
+
+        @media (max-width: 480px) {
+          .vibes-grid { transform: scale(0.30); }
+          .vibes-footer-links { gap: 0.75rem 1.25rem !important; }
+          .vibes-page footer { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+          .vibes-page footer a,
+          .vibes-page footer > div:first-child { font-size: 10px !important; }
+        }
+
+        @media (max-width: 400px) {
+          .vibes-grid { transform: scale(0.285); }
+          .vibes-card-section { height: 400px !important; }
+        }
       `}</style>
     </div>
   );

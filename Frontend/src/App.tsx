@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Vibes from './pages/Vibes';
 import Explore from './pages/Explore';
+import EventDetails from './pages/EventDetails';
+import SavedEvents from './pages/SavedEvents';
 import Callback from './pages/Auth/Callback';
 import EmailAuth from "./pages/Auth/EmailAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -17,6 +19,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Explore />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/event/:id"
+          element={
+            <ProtectedRoute>
+              <EventDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/saved-events"
+          element={
+            <ProtectedRoute>
+              <SavedEvents />
             </ProtectedRoute>
           }
         />

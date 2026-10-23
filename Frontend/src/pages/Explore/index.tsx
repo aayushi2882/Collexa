@@ -207,6 +207,15 @@ export default function ExplorePage() {
               notifications
             </button>
             <button
+              type="button"
+              onClick={() => navigate("/saved-events")}
+              className="material-symbols-outlined text-primary hover:scale-95 duration-200 cursor-pointer"
+              aria-label="Saved events"
+              title="Saved events"
+            >
+              bookmark
+            </button>
+            <button
               onClick={async () => {
                 try {
                   const { error } = await supabase.auth.signOut();
@@ -243,7 +252,7 @@ export default function ExplorePage() {
         {featuredEvent && (
           <section className="mb-12 mt-2">
             <div
-              onClick={() => window.open(featuredEvent.registration_url, "_blank")}
+              onClick={() => navigate(`/event/${featuredEvent.id}`)}
               className="relative w-full aspect-[21/9] md:aspect-[2.35/1] lg:aspect-[2.5/1] rounded-xl overflow-hidden group hover:cursor-pointer shadow-2xl"
             >
               <div
@@ -268,7 +277,7 @@ export default function ExplorePage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    window.open(featuredEvent.registration_url, "_blank");
+                    navigate(`/event/${featuredEvent.id}`);
                   }}
                   className="bg-primary text-background px-10 py-4 font-semibold uppercase tracking-widest text-xs rounded-full hover:brightness-110 transition-all active:scale-95 cursor-pointer shadow-lg mb-1"
                 >
@@ -307,7 +316,7 @@ export default function ExplorePage() {
             {recommendedRowEvents.map((event) => (
               <div
                 key={event.id}
-                onClick={() => window.open(event.registration_url, "_blank")}
+                onClick={() => navigate(`/event/${event.id}`)}
                 className="hover-lift group cursor-pointer"
               >
                 <div
@@ -398,6 +407,7 @@ export default function ExplorePage() {
             {filteredEvents.map((event) => (
               <div
                 key={event.id}
+                onClick={() => navigate(`/event/${event.id}`)}
                 className="glass rounded-xl overflow-hidden hover-lift group flex flex-col justify-between min-h-[380px]"
               >
                 <div>
@@ -429,7 +439,10 @@ export default function ExplorePage() {
                     📅 {new Date(event.event_date).toLocaleDateString()}
                   </span>
                   <button
-                    onClick={() => window.open(event.registration_url, "_blank")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/event/${event.id}`);
+                    }}
                     className="text-xs text-[#FFB26B] font-semibold uppercase tracking-wider flex items-center gap-1 group-hover:translate-x-1 transition-transform cursor-pointer"
                   >
                     Register
